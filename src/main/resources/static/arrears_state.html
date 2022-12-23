@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="assets/element-plus/index.css">
+    <script src="assets/vue/vue.global.js"></script>
+    <script src="assets/element-plus/index.full.js"></script>
+    <script src="assets/axios/axios.js"></script>
+    <style>
+        html,body,#app,.el-container {
+            padding: 0px;
+            margin: 0px;
+            height: 100%;
+            max-height: 100%;
+        }
+        .el-header{
+            background-color: lightgray;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-main{
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-table{
+            font-size: 5px;
+        }
+        
+
+    </style>
+</head>
+<body>
+    <div id="app">
+        <el-container>
+            <el-header>主机信控查询</el-header>
+            <el-main>
+                    <el-table
+                       ref="singleTable"
+                      :data="tableData"
+                      style="width: 100%"
+                      stripe>
+                      <el-table-column
+                        prop="id"
+                        label="id"
+                        width="50">
+                      </el-table-column>
+                      <el-table-column
+                        :filters="[{ text: '泉港', value: '泉港' }, { text: '南安', value: '南安' },{ text: '永春', value: '永春' },{ text: '德化', value: '德化' }]"
+                        property="zoneName"
+                        label="集团归属地"
+                        width="100">
+                      </el-table-column>
+                      <el-table-column
+                        property="groupName"
+                        label="集团名称">
+                      </el-table-column>
+
+                      <el-table-column
+                        property="state"
+                        label="信控状态">
+                      </el-table-column>
+                      
+                      <el-table-column
+                      label="操作">
+                        <template #default="scope">
+                          <!-- 获取当前行 -->
+                          <el-button @click="handleCurrentChange(scope.row)" type="text" size="small">信控状态查询</el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+            </el-main>
+
+            <el-dialog :title="dialogTitle" v-model="dialogFormVisible" width="200px" top="30vh" center>     
+              <el-radio v-model="redio" label='账号暂停通知'>暂停消息</el-radio>
+              <el-radio v-model="redio" label="账号恢复通知">恢复消息</el-radio>
+              <el-button v-on:click="handle" center>查询</el-button>
+            </el-dialog>
+          </el-container>
+    </div>
+    
+<script>
+    const Main={
+        data(){
+            return {
+                currentRow:'',
+                tableData: [{}],
+                redio:'1',
+                dialogFormVisible:false,
+                dialogTitle:"请选择消息类型",
+            }
+        }
+        ,methods:{
+          handleCurrentChange(val){
+            const objApp = this;
+            objApp.currentRow=val.id;
+            objApp.dialogFormVisible=true;
+          }
+          ,handle(){
+                const objApp=this;
+                console.info(objApp.currentRow);
+                console.info(objApp.redio);
+                const $message = this.$message;
+                axios.get(`/cloud?id=${objApp.currentRow}&messageType=${objApp.redio}`)
+                    .then(function (response) {
+                      const json = response.data.body.list[0];
+                      if(json.title=="账号暂停通知"){
+                        $message({
+                            message: '状态:暂停 暂停时间：'+json.createTime,
+                            type: 'warning'
+                          });
+                      }else if(json.title=="账号恢复通知"){
+                        $message({
+                            message: '状态:恢复 恢复时间：'+json.createTime,
+                            type: 'success'
+                          });
+                      }
+                    })
+                    .catch(function (error) {
+                        if (error instanceof TypeError){
+                            $message.error({message: '消息类型不存在', offset: 100})
+                        }
+                        if (error.request.status=='500'){
+                            $message.error({message: 'id不存在', offset: 100})
+                        }
+                    })
+            }
+        }
+        ,mounted(){
+          const objApp = this;
+          axios.get('/cloud/all')
+          .then(function(response){
+            console.info(response)
+            const json = response.data.all;
+            if (response.status=='200') {
+              objApp.tableData.splice(0, objApp.tableData.length);
+              json.forEach(function(item){
+                objApp.tableData.push(item)
+              })
+            }
+          })
+        }
+        
+    }
+    const app=Vue.createApp(Main)
+    app.use(ElementPlus)
+    app.mount('#app')
+</script>
+</body>
+</html>

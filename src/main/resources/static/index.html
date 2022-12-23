@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="assets/element-plus/index.css">
+    <script src="assets/vue/vue.global.js"></script>
+    <script src="assets/element-plus/index.full.js"></script>
+    <script src="assets/axios/axios.js"></script>
+</head>
+<body>
+<h1>集团账号信控状态查询</h1>
+<div id="app">
+    <el-input v-model="input" placeholder="请输入id" style="width: 150px"></el-input>
+    <el-radio v-model="redio" label='账号暂停通知'>暂停</el-radio>
+    <el-radio v-model="redio" label="账号恢复通知">恢复</el-radio>
+    <el-button v-on:click="handle">默认按钮</el-button>
+
+</div>
+<script>
+    const Main = {
+        data(){
+            return {
+                input:'',
+                redio:'1',
+            }
+        }
+        ,methods:{
+            handle(){
+                const objApp=this;
+                console.info(objApp.input);
+                console.info(objApp.redio);
+                const $message = this.$message;
+                axios.get(`/cloud?id=${objApp.input}&messageType=${objApp.redio}`)
+                    .then(function (response) {
+                        console.info(response)
+                        const json = response.data;
+                        if (response.status=='200') {
+                            const a=document.querySelector('p').innerText = json.body.list[0].title + json.body.list[0].createTime;
+                            // a.innerText.clear
+                        }
+                    })
+                    .catch(function (error) {
+                        if (error instanceof TypeError){
+                            $message.error({message: '消息类型不存在', offset: 100})
+                        }
+                        if (error.request.status=='500'){
+                            $message.error({message: 'id不存在', offset: 100})
+                        }
+                    })
+            }
+        }
+        ,mounted(){
+            // axios.get("/cloud/all").then(function (response) {
+            //     console.info(response)
+            // })
+        }
+    }
+    const app = Vue.createApp(Main);
+    app.use(ElementPlus);
+    app.mount("#app");
+
+</script>
+</body>
+</html>
